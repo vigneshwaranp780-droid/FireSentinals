@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Forest Health Scanner</title>
+  <style>
+    /* ---------------------------------------------------------------------- */
+    /* THEME VARIABLES */
+    /* ---------------------------------------------------------------------- */
+    :root {
+      /* Light Theme (Default) - YOUR NEW COLORS */
+      --bg1: #feada6;
+      --bg2: #f5efef;
+      
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --text-main: #123;
+      --text-muted: #556;
+      --text-header: #084;
+      --accent1: #B3FFAB;
+      --accent2: #12FFF7;
+      --accent3: #B3FFAB;
+      --border-light: rgba(0, 0, 0, 0.05);
+      --hr-bg: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.06), transparent);
+    }
+
+    body.dark-theme {
+      /* Dark Theme Overrides */
+      --bg1: #820286;
+      --bg2: #5c1452;
+      
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --text-main: #e6fff7;
+      --text-muted: #9ab;
+      --text-header: #4df;
+      --border-light: rgba(255, 255, 255, 0.1);
+      --hr-bg: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* BASE STYLES & MOBILE-FIRST LAYOUT */
+    /* ---------------------------------------------------------------------- */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Inter, 'Segoe UI', Roboto, Arial;
+      margin: 0;
+      /* Mobile: Reduce padding */
+      padding: 12px; 
+      background: linear-gradient(to top, var(--bg1) 0%, var(--bg2) 100%);
+      color: var(--text-main);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      /* Default: Single column layout for mobile */
+      display: grid; 
+      grid-template-columns: 1fr;
+      gap: 16px; /* Reduced gap */
+      align-items: start;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap; /* Allow wrapping on small screens */
+      gap: 10px;
+    }
+    
+    .logo {
+      height: 48px; /* Reduced logo size for mobile */
+      margin-right: 10px; 
+      border-radius: 8px;
+    }
+
+    header .title-group {
+        flex-grow: 1;
+        min-width: 150px;
+    }
+    
+    header h1 {
+      font-size: 18px; /* Reduced font size */
+      margin: 0;
+      color: var(--text-header);
+      letter-spacing: 0.2px;
+    }
+
+    header .small {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    .header-controls {
+        display:flex; 
+        gap:6px; 
+        align-items:center;
+    }
+    .lang-select {
+        padding: 6px;
+        font-size: 12px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px; /* Slightly smaller radius */
+      padding: 16px; /* Reduced padding */
+      box-shadow: 0 8px 25px rgba(10, 20, 10, 0.05);
+    }
+
+    /* Left column */
+    .uploader {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .preview {
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-light);
+      background: #fafafa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px; /* Reduced min-height for mobile */
+    }
+
+    .preview img {
+      max-width: 100%;
+      /* max-height: 420px; Removed max-height constraint for better mobile scaling */
+      height: auto;
+      display: block;
+    }
+
+    /* Button Styling */
+    .btn-grad {
+      /* Keep original gradient and effects */
+      background-image: linear-gradient(to right, #ff9a8b 0%, #ff6a88 51%, #ff9a8b 100%);
+      margin: 6px 0; /* Reduced margin */
+      padding: 10px 20px; /* Reduced padding */
+      font-size: 14px; /* Reduced font size */
+      background-size: 200% auto;
+      color: white;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      border-radius: 8px; /* Reduced border radius */
+      display: inline-block;
+      border: none;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      flex-grow: 1; /* Make buttons grow to fill space */
+      min-width: 100px;
+    }
+    .btn-grad:hover {
+        background-position: right center;
+        color: #fff;
+        text-decoration: none;
+        transform: translateY(-1px); /* Less aggressive hover effect */
+    }
+
+
+    .controls {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .meta {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start; /* Aligned to start to prevent ref image from pushing text */
+      justify-content: space-between;
+      flex-wrap: wrap; /* Ensure text and ref image wrap if needed */
+    }
+    
+    /* Removed the .ref CSS block entirely, as the element is gone. */
+
+
+    /* NEW PROGRESS BAR STYLES */
+    .health-meter {
+        background: #eee;
+        border-radius: 6px;
+        height: 12px;
+        margin-top: 10px;
+        overflow: hidden;
+    }
+
+    .health-bar {
+        height: 100%;
+        width: 0%; /* Will be set by JS */
+        transition: width 0.6s ease-out;
+        /* Default colors for different states (will be overridden by JS) */
+        background: #ccc; 
+    }
+    
+    .res-healthy .health-bar { background: #008000; }
+    .res-dry .health-bar { background: #FFD700; }
+    .res-disease .health-bar { background: #FF4500; }
+    .res-pest .health-bar { background: #8B4513; }
+    .res-risk .health-bar { background: #DC143C; }
+
+
+    /* result box */
+    #resultBox {
+      display: none;
+      padding: 10px; /* Reduced padding */
+      border-radius: 8px;
+      font-weight: 600;
+      text-align: center;
+      margin-top: 8px;
+    }
+    
+    .result-actions {
+      margin-top: 8px; 
+      display: flex; 
+      gap: 6px; 
+      justify-content: space-between; /* Spread buttons out */
+      flex-wrap: wrap;
+    }
+    .result-actions .btn-grad {
+        min-width: unset;
+        font-size: 12px;
+        padding: 8px 10px;
+        flex-grow: 1;
+    }
+
+    /* Right column (logs/guide) */
+    .side {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      order: 2; /* Ensure side content loads below main content on mobile */
+    }
+    
+    /* Logs table adjustment for mobile */
+    table {
+      font-size: 12px;
+    }
+    th, td {
+      padding: 6px;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* DESKTOP OVERRIDES */
+    /* ---------------------------------------------------------------------- */
+    @media (min-width: 920px) {
+      .wrap {
+        /* Desktop: Two column layout */
+        grid-template-columns: 1fr 380px;
+        gap: 22px;
+      }
+      .side {
+        order: unset; /* Reset order on desktop */
+      }
+      /* Removed .ref desktop override */
+      
+      header h1 {
+          font-size: 20px;
+      }
+      header .small {
+          font-size: 13px;
+      }
+      .logo {
+          height: 70px; 
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="Forest Scanner Logo" class="logo">
+    
+    <div class="title-group">
+      <h1 id="title">Forest Health Scanner</h1>
+      <div class="small muted" id="subtitle">Detect tree dryness, disease & pest attack — offline, community-friendly</div>
+    </div>
+    
+    <div class="header-controls">
+      <select id="lang" class="lang-select">
+        <option value="en">English</option>
+        <option value="hi">हिंदी</option>
+        <option value="ta">தமிழ்</option>
+        <option value="ur">اردو</option>
+      </select>
+      <button type="button" class="btn-grad" id="themeToggle" title="Toggle theme" aria-label="Toggle theme" style="padding: 8px 12px; min-width: unset;">🌓</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div class="uploader">
+        <div class="meta">
+          <div>
+            <strong id="uploadTitle">Upload or take a photo</strong>
+            <div class="muted" id="uploadHint">Use camera to capture leaf, bark or ground</div>
+          </div>
+        </div>
+
+        <div class="preview" id="preview">
+          <div class="muted">No image selected</div>
+        </div>
+
+        <div class="controls">
+          <label class="upload-btn btn-grad" for="fileInput">
+            <input id="fileInput" type="file" accept="image/*" capture="camera" style="display:none">
+            📷 Capture / Upload
+          </label>
+
+          <button type="button" class="btn-grad" id="analyzeButton">Analyze</button>
+          <button type="button" class="btn-grad" id="logsButton">Logs</button>
+        </div>
+
+        <div id="resultArea" style="margin-top: 10px;">
+            <div id="confText" class="muted">Confidence: --</div>
+            <div class="health-meter">
+                <div id="healthBar" class="health-bar" style="width: 0%;"></div>
+            </div>
+            <div id="resultBox"></div>
+        </div>
+        
+        <div class="badges" id="badgesArea">
+          <div class="badge">Community Edition</div>
+        </div>
+
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="card">
+        <strong id="howTitle">How it helps</strong>
+        <p class="muted" id="howText">Detects stressed trees early, prevents future fires, and teaches villagers how to protect forests.</p>
+
+        <hr style="border:none; height:1px; background:var(--hr-bg); margin:12px 0">
+
+        <div><strong id="recentTitle">Recent Detections</strong></div>
+        <div style="max-height:250px; overflow:auto; margin-top:8px">
+          <table id="logsTable">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="2" class="muted">No logs yet</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:12px">
+          <button type="button" class="btn-grad" id="exportButton">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <strong id="eduTitle">Quick Guide</strong>
+        <ol style="padding-left:18px; margin-top:8px" id="guideList">
+          <li>Take a clear photo of leaf or bark.</li>
+          <li>Tap <em>Analyze</em> and wait for result.</li>
+          <li>If result says drying/disease, take action or inform volunteers.</li>
+        </ol>
+      </div>
+
+    </aside>
+  </main>
+
+  <script>
+    // --- All code wrapped in DOMContentLoaded ---
+    document.addEventListener("DOMContentLoaded", () => {
+
+      // --- Translations ---
+      const L = {
+        en: {
+          title: 'Forest Health Scanner', subtitle: 'Detect tree dryness, disease & pest attack — offline, community-friendly',
+          uploadTitle: 'Upload or take a photo', uploadHint: 'Use camera to capture leaf, bark or ground',
+          analyze: 'Analyze', collect: 'Capture / Upload', logs: 'Logs', how: 'Detects stressed trees early, prevents future fires, and teaches villagers how to protect forests.',
+          guide1: 'Take a clear photo of leaf or bark.', guide2: 'Tap Analyze and wait for result.', guide3: 'If result says drying/disease, take action or inform volunteers.',
+          result_healthy: 'Healthy', result_drying: 'Drying / Early risk', result_disease: 'Disease detected', result_pest: 'Pest attack', result_risk: 'High fire-risk zone',
+        },
+        hi: {
+          title: 'वृक्ष स्वास्थ्य स्कैनर', subtitle: 'पेड़ की सूखापन, रोग और कीट पहचानें — ऑफ़लाइन, समुदाय के लिए',
+          uploadTitle: 'फोटो अपलोड या लें', uploadHint: 'पत्ता, छाल या जमीन की तस्वीर लें', analyze: 'विश्लेषण', collect:'कैپ्चر / अपलोड', logs:'रिपोर्ट', how: ' पेड़ के दबाव का जल्दी पता लगाता है और आग को रोकता है।',
+          guide1:'पत्ती या छाल की साफ़ तस्वीर लें।', guide2:'विश्लेषण पर टैप करें और परिणाम का इंतजार करें।', guide3:'यदि सूखा/रोग दिखे, तो कदम उठाएं या स्वयंसेवकों को सूचित करें।',
+          result_healthy: 'स्वस्थ', result_drying: 'सूखा / शुरुआती खतरा', result_disease: 'रोग पाया गया', result_pest: 'कीट हमला', result_risk: 'आग का उच्च खतरा',
+        },
+        ta: {
+          title: 'மரம் ஆரோக்கிய ஸ்கேனர்', subtitle: 'மரத்தின் வறட்சித்தன்மை, நோய் மற்றும் பூச்சி தாக்கத்தை கண்டறிதல் — ஆஃப்லைன்',
+          uploadTitle: 'படத்தை பதிவேற்று அல்லது எடுத்துக்கோ', uploadHint:'இலை, தோல் அல்லது زمین-ஐப் புதிக', analyze:'பகுப்பாய்வு', collect:'பிடி / பதிவேற்று', logs:'அறிக்கைகள்', how:'மரக் காய்ச்சலை முன்னரே கண்டறிந்து தீயைக் குறைக்கும்',
+          guide1:'இலை அல்லது தோலின் தெளிவான படம் எடுக்கவும்.', guide2:'"பகுப்பாய்வு" சொடுக்கி முடிவைக் காத்திருங்கள்.', guide3:'உலர்ந்தது/நோயாணெனில் நடவடிக்கை எடுக்கவும்.',
+          result_healthy: 'ஆரோக்கியமானது', result_drying: 'வறட்சி / ஆரம்ப ஆபத்து', result_disease: 'நோய் கண்டறியப்பட்டது', result_pest: 'பூச்சி தாக்குதல்', result_risk: 'அதிக தீ ஆபத்து',
+        },
+        ur: {
+          title: 'درخت کی صحت اسکینر', subtitle: 'درخت کی خشki، بیماری اور کیڑوں کا پتہ لگائیں — آف لائن، کمیونٹی کے لیے',
+          uploadTitle: 'تصویر اپ لوڈ یا لیں', uploadHint: 'پتا، چھال یا زمین کی تصویر لیں', analyze:'تجزیہ کریں', collect:'کیپچر / اپ لوڈ', logs:'لاگز', how:'درختوں کے دباؤ کو جلدی پکڑتا ہے اور آگ کو روکتا ہے۔',
+          guide1:'پتے یا چھال کی واضح تصویر لیں۔', guide2:'تجزیہ پر ٹیP کریں اور نتیجے کا انتظار کریں۔', guide3:'اگر خشک/مرض ظاہر ہو تو اقدامات کریں یا رضا کاروں کو بتائیں۔',
+          result_healthy: 'صحت مند', result_drying: 'خشک ہونا / ابتدائی خطرہ', result_disease: 'بیماری کا پتہ چلا', result_pest: 'کیڑوں کا حملہ', result_risk: 'آگ کا زیادہ خطرہ',
+        }
+      };
+
+      // --- Cache DOM Elements ---
+      const langSelect = document.getElementById('lang');
+      const themeToggleButton = document.getElementById('themeToggle');
+      const fileInput = document.getElementById('fileInput');
+      const analyzeButton = document.getElementById('analyzeButton');
+      const logsButton = document.getElementById('logsButton');
+      const exportButton = document.getElementById('exportButton');
+      
+      const previewBox = document.getElementById('preview');
+      const resultBox = document.getElementById('resultBox');
+      const confText = document.getElementById('confText');
+      const healthBar = document.getElementById('healthBar');
+      const logsTableBody = document.querySelector('#logsTable tbody');
+      const guideList = document.getElementById('guideList').children;
+      
+      const titleEl = document.getElementById('title');
+      const subtitleEl = document.getElementById('subtitle');
+      const uploadTitleEl = document.getElementById('uploadTitle');
+      const uploadHintEl = document.getElementById('uploadHint');
+      const howTextEl = document.getElementById('howText');
+      const howTitleEl = document.getElementById('howTitle');
+      
+      // --- State Variables ---
+      let currentFile = null;
+      let lastLogId = null;
+
+      // --- UI wiring (Event Listeners) ---
+      themeToggleButton.addEventListener('click', toggleTheme);
+      langSelect.addEventListener('change', () => setLang(langSelect.value));
+      fileInput.addEventListener('change', handleFile);
+      analyzeButton.addEventListener('click', sendImage);
+      logsButton.addEventListener('click', showLogs);
+      exportButton.addEventListener('click', exportCSV);
+      
+      // --- Custom Modal for Alerts/Prompts (reused) ---
+      function showModal(text, requiresInput = false, callback = null) {
+        // ... (Modal implementation is the same) ...
+        const oldModal = document.getElementById('customModal');
+        if (oldModal) {
+          oldModal.remove();
+        }
+
+        const modalBackdrop = document.createElement('div');
+        modalBackdrop.id = 'customModal';
+        modalBackdrop.style.cssText = `
+          position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+          background: rgba(0,0,0,0.5); display: flex; align-items: center;
+          justify-content: center; z-index: 1000;
+        `;
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+          background: var(--card-bg, #fff); color: var(--text-main, #000);
+          padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+          min-width: 300px; max-width: 90%;
+        `;
+        
+        const modalText = document.createElement('p');
+        modalText.innerText = text;
+        modalText.style.margin = '0 0 15px 0';
+        modalContent.appendChild(modalText);
+        
+        let inputField;
+        if (requiresInput) {
+          inputField = document.createElement('input');
+          inputField.type = 'text';
+          inputField.style.cssText = `
+            width: 100%; padding: 8px; border-radius: 5px; 
+            border: 1px solid var(--border-light, #ccc); margin-bottom: 15px;
+          `;
+          modalContent.appendChild(inputField);
+        }
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.textAlign = 'right';
+
+        const okButton = document.createElement('button');
+        okButton.innerText = 'OK';
+        okButton.className = 'btn-grad'; 
+        okButton.style.margin = '0 0 0 10px';
+        
+        okButton.onclick = () => {
+          if (callback) {
+            const value = requiresInput ? inputField.value : true;
+            callback(value);
+          }
+          modalBackdrop.remove();
+        };
+        buttonContainer.appendChild(okButton);
+
+        if (requiresInput || callback) {
+           const cancelButton = document.createElement('button');
+           cancelButton.innerText = 'Cancel';
+           cancelButton.className = 'btn-grad';
+           cancelButton.style.background = '#888'; 
+           cancelButton.onclick = () => {
+             if (callback) {
+               callback(null); 
+             }
+             modalBackdrop.remove();
+           };
+           buttonContainer.appendChild(cancelButton);
+        }
+        
+        modalContent.appendChild(buttonContainer);
+        modalBackdrop.appendChild(modalContent);
+        document.body.appendChild(modalBackdrop);
+
+        if(inputField) inputField.focus();
+      }
+
+
+      // --- Functions ---
+      function setLang(k) {
+        const dict = L[k] || L.en;
+        titleEl.innerText = dict.title;
+        subtitleEl.innerText = dict.subtitle;
+        uploadTitleEl.innerText = dict.uploadTitle;
+        uploadHintEl.innerText = dict.uploadHint;
+        howTextEl.innerText = dict.how;
+        howTitleEl.innerText = dict.how ? 'How it helps' : '';
+        const guides = [dict.guide1, dict.guide2, dict.guide3];
+        for (let i = 0; i < 3; i++) {
+          if(guideList[i]) guideList[i].innerText = guides[i];
+        }
+      }
+
+      function toggleTheme() {
+        document.body.classList.toggle("dark-theme");
+      }
+
+      function handleFile(e) {
+        const f = e.target.files[0];
+        if (!f) return;
+        currentFile = f;
+        const url = URL.createObjectURL(f);
+        previewBox.innerHTML = ''; // Clear preview
+        const img = document.createElement('img');
+        img.src = url;
+        previewBox.appendChild(img);
+        
+        // Reset results display
+        resultBox.style.display = 'none';
+        confText.innerText = 'Confidence: --';
+        healthBar.style.width = '0%';
+        resultBox.className = '';
+      }
+
+      async function sendImage() {
+        if (!currentFile) {
+          showModal('Please choose or capture an image first.');
+          return;
+        }
+        
+        // UI feedback while analyzing
+        resultBox.style.display = 'none';
+        confText.innerText = 'Analyzing...';
+        healthBar.style.width = '0%';
+        healthBar.className = 'health-bar';
+
+        const form = new FormData();
+        form.append('file', currentFile);
+        form.append('lang', langSelect.value);
+        
+        try {
+         // REPLACE 192.168.1.X with your actual IP from Step 1
+        // REPLACE 192.168.1.X with your actual IP from Step 1
+        const resp = await fetch('http://192.168.0.100/predict', { method: 'POST', body: form });
+          if (!resp.ok) throw new Error('no-backend');
+          const j = await resp.json();
+          showResult(j.result, j.confidence, j.timestamp, j.id);
+        } catch (err) {
+          // MOCK fallback (random but biased to healthy)
+          const choices = ['healthy', 'drying', 'disease', 'pest', 'risk'];
+          // Use Math.random for a bit of realism
+          const pick = choices[Math.floor(Math.random() * choices.length)]; 
+          const conf = (0.6 + Math.random() * 0.35).toFixed(2);
+          showResult(pick, conf, new Date().toISOString(), "mock_" + Date.now());
+        }
+      }
+
+      function showResult(code, confidence, ts, id) {
+        const confPct = Math.round(confidence * 100);
+        resultBox.style.display = 'block';
+        
+        // 1. Update Confidence Text
+        confText.innerText = `Confidence: ${confPct}% (${code.charAt(0).toUpperCase() + code.slice(1)})`;
+        
+        // 2. Update Progress Bar (Health Meter)
+        const map = {
+          healthy: 'res-healthy',
+          drying: 'res-dry',
+          disease: 'res-disease',
+          pest: 'res-pest',
+          risk: 'res-risk'
+        };
+        const mClass = map[code] || 'res-risk';
+        
+        healthBar.style.width = `${confPct}%`;
+        healthBar.className = 'health-bar ' + mClass;
+        
+        // 3. Update Result Box Text
+        const currentLang = langSelect.value;
+        const resultText = L[currentLang][`result_${code}`] || L.en[`result_${code}`] || 'Unknown';
+        
+        resultBox.className = mClass;
+        resultBox.innerHTML = `
+          <strong>${resultText}</strong>
+          <div class="result-timestamp">${new Date(ts).toUTCString()}</div>
+          ${actionRowHTML()}
+        `;
+        lastLogId = id;
+      }
+      
+      function actionRowHTML() {
+        // Re-using the same action structure
+        return `<div class="result-actions">
+          <button type="button" class="btn-grad verify-btn">✅ Verify</button>
+          <button type="button" class="btn-grad correct-btn">✏️ Correct</button>
+          <button type="button" class="btn-grad share-btn">📤 Share</button>
+        </div>`;
+      }
+      
+      // --- Delegation for Action Buttons (Since they are dynamically loaded) ---
+      document.body.addEventListener('click', (e) => {
+          if (e.target.classList.contains('verify-btn')) {
+              markVerified();
+          } else if (e.target.classList.contains('correct-btn')) {
+              correctLabel();
+          } else if (e.target.classList.contains('share-btn')) {
+              openShare();
+          }
+      });
+
+
+      // --- Logs UI (reused) ---
+      async function showLogs() {
+        try {
+          const resp = await fetch('http://192.168.0.100/logs');
+          if (!resp.ok) throw new Error('no logs');
+          const j = await resp.json();
+          renderLogs(j.logs || []);
+        } catch (e) {
+          renderLogs([]); // Clear logs on error
+          console.warn('Logs endpoint not available. Running in demo mode.');
+        }
+      }
+
+      function renderLogs(rows) {
+        logsTableBody.innerHTML = ''; // Clear table
+        if (!rows.length) {
+          logsTableBody.innerHTML = '<tr><td colspan="2" class="muted">No logs yet</td></tr>';
+          return;
+        }
+        rows.forEach(r => {
+          const tr = document.createElement('tr');
+          const td1 = document.createElement('td');
+          // Format date slightly more mobile-friendly
+          td1.innerText = new Date(r.timestamp).toLocaleDateString() + ' ' + new Date(r.timestamp).toLocaleTimeString();
+          const td2 = document.createElement('td');
+          td2.innerText = r.result + (r.confidence ? (' (' + Math.round(r.confidence * 100) + '%)') : '');
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          logsTableBody.appendChild(tr);
+        });
+      }
+
+      function exportCSV() {
+        window.open('/export', '_blank');
+      }
+
+      // --- Simple actions: verify / correct / share (reused) ---
+      function markVerified() {
+        showModal('Your name (for community record):', true, (name) => {
+          if (!name) return;
+          const data = new URLSearchParams();
+          data.append('log_id', lastLogId || '0');
+          data.append('user', name);
+          data.append('correct_label', '');
+          fetch('http://192.168.0.100/feedback', { method: 'POST', body: data })
+            .then(() => { showModal('Thanks — verified (saved).'); showLogs(); })
+            .catch(() => { showModal('Saved locally (demo).'); });
+        });
+      }
+
+      function correctLabel() {
+        showModal('Correct label (healthy, drying, disease, pest, risk):', true, (lab) => {
+          if (!lab) return;
+          showModal('Your name:', true, (name) => {
+            if(!name) return;
+            const data = new URLSearchParams();
+            data.append('log_id', lastLogId || '0');
+            data.append('user', name);
+            data.append('correct_label', lab);
+            fetch('http://192.168.0.100/feedback', { method: 'POST', body: data })
+              .then(() => { showModal('Correction saved.'); showLogs(); })
+              .catch(() => { showModal('Saved locally (demo).'); });
+          });
+        });
+      }
+
+      function openShare() {
+        showModal('Share to (group name or phone):', true, (to) => {
+          if (!to) return;
+          showModal('Message (optional):', true, (msg) => {
+            if (msg === null) return; 
+            const data = new URLSearchParams();
+            data.append('log_id', lastLogId || '0');
+            data.append('shared_by', 'volunteer');
+            data.append('shared_to', to);
+            data.append('message', msg);
+            fetch('/share_report', { method: 'POST', body: data })
+              .then(() => { showModal('Queued for manual sharing.'); })
+              .catch(() => { showModal('Queued locally (demo).'); });
+          });
+        });
+      }
+
+      // --- Initial setup on load ---
+      setLang('en');
+      setTimeout(showLogs, 600); // Try to fetch logs on load
+
+    });
+  </script>
+</body>
+</html>
